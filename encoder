@@ -57,28 +57,10 @@ int main(int argc, char **argv) {
 
     // 打開輸入文件
     FILE *inputFile = fopen(input_file, "r");
-    if (!inputFile) {
-        perror("無法打開輸入文件");
-        return 1;
-    }
-
     // 打開 CSV 文件進行寫入
     FILE *csvFile = fopen(output_csv, "w");
-    if (!csvFile) {
-        perror("無法打開輸出 CSV 文件");
-        fclose(inputFile);
-        return 1;
-    }
-
     // 打開二進制文件進行寫入
     FILE *binaryFile = fopen(output_bin, "wb");
-    if (!binaryFile) {
-        perror("無法打開輸出二進制文件");
-        fclose(inputFile);
-        fclose(csvFile);
-        return 1;
-    }
-
     // 讀取文件中的每個字元並計算其頻率
     int ch;
     while ((ch = fgetc(inputFile)) != EOF) {
@@ -125,17 +107,17 @@ int main(int argc, char **argv) {
 
     // 為每個字元分配 7 位的二進位編碼
     int codewordIndex = 0;
-    for (int c = 0; c < charCount; c++) {
+    for (int n = 0; n < charCount; n++) {
         int tempValue = codewordIndex;
         
         // 初始化每個字符的編碼為 7 位二進制
-        for (int i = 6; i >= 0; i--) {
-            charFrequencies[c].codeword[i] = tempValue % 2 + '0';
+        for (int i = 7; i >= 1; i--) {
+            charFrequencies[n].codeword[i] = tempValue % 2 + '0';
             tempValue = tempValue / 2;
         }
-        charFrequencies[c].codeword[7] = '\0';  // 添加結束符
+        charFrequencies[n].codeword[7] = '\0';  // 添加結束符
 
-        codewordIndex++;  // 更新編碼索引
+        codewordIndex++;  
     }
 
     // 輸出結果到 CSV 文件
@@ -167,8 +149,8 @@ int main(int argc, char **argv) {
     }
 
 
-  // 將編碼輸出到二進制文件的過程
-fseek(inputFile, 0, SEEK_SET); // 將文件指針重置到文件開頭
+// 將編碼輸出到二進制文件
+fseek(inputFile, 0, SEEK_SET); // 重新讀取文件
 unsigned char currentByte = 0;
 int tempCount = 0;  // 累積的位數
 
@@ -184,13 +166,10 @@ while ((ch = fgetc(inputFile)) != EOF) {
 
     // 如果找到字符，將其 7 位編碼轉換並寫入二進制文件
     if (charFreq != NULL) {
-        for (int j = 0; j < 7; j++) {
-            // 將當前位加入 currentByte，左移並加上新的位
+        for (int j = 0; j < 7; j++) {  // 將當前位加入 currentByte，左移並加上新的位
             currentByte = (currentByte << 1) | (charFreq->codeword[j] - '0');
             tempCount++;
-
-            // 當累積了 8 位時，將 currentByte 寫入文件
-            if (tempCount == 8) {
+            if (tempCount == 8) {   // 當累積了 8 位時，將 currentByte 寫入文件
                 fputc(currentByte, binaryFile);  // 寫入一個 byte
                 tempCount = 0;                   // 重置計數器
                 currentByte = 0;                 // 重置當前 byte
